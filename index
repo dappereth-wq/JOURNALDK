@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DK Trading Journal</title>
+<style>
+:root{
+  --bg:#07111f;--panel:#0c1929;--panel2:#101f33;--border:#1b3048;
+  --text:#f4f7fb;--muted:#8293a8;--green:#24d39b;--red:#ff647c;
+  --blue:#2387ff;--white:#fff;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif}
+button{font:inherit}.app{display:flex;min-height:100vh}
+.sidebar{width:245px;background:#06101d;border-right:1px solid var(--border);padding:24px 16px;position:fixed;inset:0 auto 0 0}
+.logo{font-size:22px;font-weight:800;margin:4px 10px 32px}.logo span{color:var(--green)}
+.nav button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--muted);padding:13px 14px;border-radius:10px;margin:4px 0;cursor:pointer}
+.nav button.active,.nav button:hover{background:var(--panel2);color:var(--white)}
+.main{margin-left:245px;width:calc(100% - 245px);padding:28px;max-width:1600px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}.top h1{margin:0;font-size:26px}.top p{color:var(--muted);margin:6px 0 0}
+.account{background:var(--panel);border:1px solid var(--border);padding:10px 14px;border-radius:10px;color:var(--muted)}
+.account b{color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px}.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}.value{font-size:25px;font-weight:750;margin-top:9px}.positive{color:var(--green)}.negative{color:var(--red)}
+.layout{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px}.section{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px}.section h2{font-size:16px;margin:0 0 18px}
+canvas{width:100%;height:250px;display:block}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.dayname{color:var(--muted);font-size:11px;text-align:center;padding:5px}.day{min-height:58px;background:#0a1727;border:1px solid #152941;border-radius:8px;padding:7px;font-size:11px}.day .num{color:#8fa0b3}.day.profit{border-color:rgba(36,211,155,.35);background:rgba(36,211,155,.07)}.day.loss{border-color:rgba(255,100,124,.3);background:rgba(255,100,124,.06)}.day .pnl{font-weight:700;margin-top:8px}
+.table-wrap{margin-top:16px;overflow:auto}.trades{width:100%;border-collapse:collapse;min-width:700px}.trades th,.trades td{text-align:left;padding:13px;border-bottom:1px solid var(--border);font-size:13px}.trades th{color:var(--muted);font-weight:500}.side-long{color:var(--green)}.side-short{color:#72a9ff}
+.bar{height:8px;background:#15263a;border-radius:99px;overflow:hidden;margin-top:9px}.bar span{display:block;height:100%;background:var(--green);width:63%}
+@media(max-width:1050px){.grid{grid-template-columns:repeat(3,1fr)}.layout{grid-template-columns:1fr}.sidebar{width:190px}.main{margin-left:190px;width:calc(100% - 190px)}}
+@media(max-width:700px){.sidebar{display:none}.main{margin-left:0;width:100%;padding:16px}.grid{grid-template-columns:repeat(2,1fr)}.top{gap:10px;align-items:flex-start}.account{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="logo">DK <span>TRADING</span></div>
+  <nav class="nav">
+    <button class="active">▦ Dashboard</button>
+    <button>↗ Operaciones</button>
+    <button>▣ Calendario</button>
+    <button>◒ Estadísticas</button>
+    <button>⚙ Configuración</button>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="top">
+    <div><h1>Trading Journal</h1><p>Tu rendimiento, automatizado.</p></div>
+    <div class="account">Cuenta: <b id="accountName">TRADOVATE — DEMO</b></div>
+  </div>
+
+  <section class="grid">
+    <div class="card"><div class="label">Balance</div><div class="value" id="balance">$10,842.50</div></div>
+    <div class="card"><div class="label">P&L total</div><div class="value positive" id="pnl">+$842.50</div></div>
+    <div class="card"><div class="label">ROI</div><div class="value positive" id="roi">+8.43%</div></div>
+    <div class="card"><div class="label">Profit Factor</div><div class="value" id="pf">1.84</div></div>
+    <div class="card"><div class="label">Win Rate</div><div class="value" id="wr">63.2%</div></div>
+    <div class="card"><div class="label">Trades</div><div class="value" id="trades">38</div></div>
+  </section>
+
+  <div class="layout">
+    <section class="section">
+      <h2>Curva de equity</h2>
+      <canvas id="equity"></canvas>
+    </section>
+    <section class="section">
+      <h2>Estadísticas</h2>
+      <p class="label">Average Win</p><div class="value positive">$78.40</div>
+      <p class="label" style="margin-top:20px">Average Loss</p><div class="value negative">-$42.70</div>
+      <p class="label" style="margin-top:20px">Mejor día</p><div class="value positive">+$310.00</div>
+      <p class="label" style="margin-top:20px">Peor día</p><div class="value negative">-$126.50</div>
+      <p class="label" style="margin-top:20px">Consistencia</p><div class="bar"><span></span></div>
+    </section>
+  </div>
+
+  <div class="layout">
+    <section class="section">
+      <h2>Calendario — Septiembre 2026</h2>
+      <div class="calendar" id="calendar"></div>
+    </section>
+    <section class="section">
+      <h2>Resumen de hoy</h2>
+      <p class="label">P&L</p><div class="value positive">+$184.20</div>
+      <p class="label" style="margin-top:20px">Trades</p><div class="value">7</div>
+      <p class="label" style="margin-top:20px">Win rate</p><div class="value">71.4%</div>
+    </section>
+  </div>
+
+  <section class="section table-wrap">
+    <h2>Últimas operaciones</h2>
+    <table class="trades">
+      <thead><tr><th>Hora</th><th>Símbolo</th><th>Lado</th><th>Entrada</th><th>Salida</th><th>Contratos</th><th>P&L</th></tr></thead>
+      <tbody id="tradeRows"></tbody>
+    </table>
+  </section>
+</main>
+</div>
+
+<script>
+const tradeData=[
+ ["09:34","MNQ","LONG","24,812.25","24,829.50","2",185],
+ ["09:51","MNQ","SHORT","24,835.00","24,828.75","1",62.5],
+ ["10:07","MNQ","LONG","24,821.50","24,814.00","2",-75],
+ ["10:42","MNQ","LONG","24,805.25","24,832.00","2",267.5],
+ ["11:18","MNQ","SHORT","24,838.00","24,825.50","1",125]
+];
+const rows=document.getElementById("tradeRows");
+tradeData.forEach(t=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${t[0]}</td><td>${t[1]}</td><td class="${t[2]==="LONG"?"side-long":"side-short"}">${t[2]}</td><td>${t[3]}</td><td>${t[4]}</td><td>${t[5]}</td><td class="${t[6]>=0?"positive":"negative"}">${t[6]>=0?"+":""}$${Math.abs(t[6]).toFixed(2)}</td>`;rows.appendChild(tr)});
+
+const cal=document.getElementById("calendar");
+["L","M","X","J","V","S","D"].forEach(x=>{const d=document.createElement("div");d.className="dayname";d.textContent=x;cal.appendChild(d)});
+for(let i=0;i<1;i++) { const d=document.createElement("div");d.className="day";d.innerHTML="";cal.appendChild(d) }
+const vals={1:120,2:-45,3:310,4:85,7:90,8:-30,9:210,10:185,11:-70,14:260,15:125,16:-40,17:180,18:95,21:-126.5,22:230,23:145,24:75,25:-55,28:310,29:184.2};
+for(let n=1;n<=30;n++){const d=document.createElement("div");const v=vals[n];d.className="day "+(v>0?"profit":v<0?"loss":"");d.innerHTML=`<div class="num">${n}</div>${v!==undefined?`<div class="pnl ${v>=0?"positive":"negative"}">${v>=0?"+":""}$${v.toFixed(0)}</div>`:""}`;cal.appendChild(d)}
+
+const canvas=document.getElementById("equity"),ctx=canvas.getContext("2d");
+function draw(){const r=canvas.getBoundingClientRect(),d=devicePixelRatio||1;canvas.width=r.width*d;canvas.height=r.height*d;ctx.scale(d,d);const w=r.width,h=r.height;ctx.strokeStyle="#1b3048";ctx.lineWidth=1;for(let i=1;i<5;i++){ctx.beginPath();ctx.moveTo(0,h*i/5);ctx.lineTo(w,h*i/5);ctx.stroke()}const pts=[0,80,55,140,125,205,190,260,235,300,282,350,330,390,375,430];const max=Math.max(...pts),min=Math.min(...pts);ctx.strokeStyle="#24d39b";ctx.lineWidth=3;ctx.beginPath();pts.forEach((v,i)=>{const x=i*w/(pts.length-1),y=h-12-(v-min)/(max-min)*(h-28);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}
+addEventListener("resize",draw);draw();
+</script>
+</body>
+</html>
